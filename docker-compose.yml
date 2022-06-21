@@ -1,0 +1,20 @@
+---
+version: "2.1"
+services:
+  backup:
+    image: johannmx/paperless-ngx_backup:nightly
+    container_name: paperless-ngx_backup_gotify
+    volumes:
+      - /docker/paperless/data:/data:ro # Read-only
+      - /backups/paperless/:/backups
+      #- /etc/localtime:/etc/localtime:ro # Container uses date from host.
+    environment:
+      - DELETE_AFTER=30
+      #- CRON_TIME=*/5 * * * * # At every 5th minute.
+      - CRON_TIME=0 3 * * * # Runs at 3am.
+      - UID=1000
+      - GID=100
+      - TZ=America/Argentina/Buenos_Aires # Specify a timezone to use EG Europe/London.
+      - WATCHTOWER_LABEL_ENABLE=false
+      - GOTIFY_TOKEN=yourtoken
+      - GOTIFY_SERVER=server.domain.com
