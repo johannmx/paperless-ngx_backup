@@ -19,8 +19,8 @@ BACKUP_MEDIA="media" # directory
 echo "[$(date +"%F %r")] Starting tar.xz compression..."
 start_time=$SECONDS
 tar -Jcf $BACKUP_LOCATION $BACKUP_DB $BACKUP_DATA $BACKUP_MEDIA 2>/dev/null
-echo "[$(date +"%F %r")] Finishing tar.xz compression..."
 elapsed=$(( SECONDS - start_time ))
+echo "[$(date +"%F %r")] Finishing tar.xz compression..."
 DURATION="eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')""
 OUTPUT="${OUTPUT}New backup created"
 #ELAPSETIME="$(($DURATION))"
