@@ -21,9 +21,9 @@ start=$(date +%s)
 tar -Jcf $BACKUP_LOCATION $BACKUP_DB $BACKUP_DATA $BACKUP_MEDIA 2>/dev/null
 end=$(date +%s)
 echo "[$(date +"%F %r")] Finishing tar.xz compression..."
-DURATION="$end-$start"
+
 OUTPUT="${OUTPUT}New backup created"
-ELAPSETIME="Elapsed Time: $(($DURATION)) seconds"
+ELAPSETIME="Elapsed Time: $(($end-$start)) seconds"
 
 # ------------------ [ DELETE ] ------------------
 
