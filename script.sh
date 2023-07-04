@@ -16,14 +16,15 @@ BACKUP_DATA="data" # directory
 BACKUP_MEDIA="media" # directory
 
 # Back up files and folders.
-start=$(date +%s)
 echo "[$(date +"%F %r")] Starting tar.xz compression..."
+SECONDS=0
 tar -Jcf $BACKUP_LOCATION $BACKUP_DB $BACKUP_DATA $BACKUP_MEDIA 2>/dev/null
 end=$(date +%s)
 echo "[$(date +"%F %r")] Finishing tar.xz compression..."
-DURATION="$end-$start"
+t="$SECONDS"
+DURATION="printf 'Time taken: %d minutes\n' "$(( t/60 - 1440*(t/86400) ))""
 OUTPUT="${OUTPUT}New backup created"
-ELAPSETIME="Elapsed Time: $(($DURATION)) seconds"
+#ELAPSETIME="$(($DURATION))"
 
 # ------------------ [ DELETE ] ------------------
 
@@ -58,5 +59,5 @@ apprise -vv -t "💾 Backup Vaultwarden" -b "☑️ ${OUTPUT}" \
 # Assuming our {WebhookID} is 4174216298
 # Assuming our {WebhookToken} is JHMHI8qBe7bk2ZwO5U711o3dV_js
 echo "[$(date +"%F %r")] Sending notification to Discord."
-apprise -vv -t "Info Status Backup - ${ELAPSETIME}" -b "💾 ${OUTPUT}" \
+apprise -vv -t "Info Status Backup - ${DURATION}" -b "💾 ${OUTPUT}" \
    "discord://${DISCORD_WEBHOOK_ID}/${DISCORD_WEBHOOK_TOKEN}/?avatar=No"
