@@ -44,3 +44,15 @@ echo "[$(date +"%F %r")] ${OUTPUT}."
 echo "[$(date +"%F %r")] Sending notification to Gotify Server."
 apprise -vv -t "Backup Paperless-ngx" -b "☑️ 💾 ${OUTPUT}" \
    "gotifys://${GOTIFY_SERVER}/${GOTIFY_TOKEN}/?priority=high"
+
+# ------------------ [ Slack Notifications ] ------------------
+echo "[$(date +"%F %r")] Sending notification to Slack."
+apprise -vv -t "💾 Backup Vaultwarden" -b "☑️ ${OUTPUT}" \
+   "${SLACK_WEBHOOK}"
+
+# ------------------ [ Discord Notifications ] ------------------
+# Assuming our {WebhookID} is 4174216298
+# Assuming our {WebhookToken} is JHMHI8qBe7bk2ZwO5U711o3dV_js
+echo "[$(date +"%F %r")] Sending notification to Discord."
+apprise -vv -t "Info Status Backup" -b "💾 ${OUTPUT}" \
+   "discord://${DISCORD_WEBHOOK_ID}/${DISCORD_WEBHOOK_TOKEN}/?avatar=No"

@@ -15,6 +15,8 @@ ENV GID 100
 ENV DELETE_AFTER 0
 ENV GOTIFY_TOKEN 12345
 ENV GOTIFY_SERVER server.com
+ENV DISCORD_WEBHOOK_ID discordwebhookid
+ENV DISCORD_WEBHOOK_TOKEN discordwebhooktoken
 
 # Install python/pip
 ENV PYTHONUNBUFFERED=1
@@ -23,7 +25,7 @@ RUN python3 -m ensurepip
 RUN pip3 install --no-cache --upgrade pip setuptools
 
 # Install apprise for notificactions
-RUN pip install apprise
+RUN pip3 install apprise
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY script.sh /app/

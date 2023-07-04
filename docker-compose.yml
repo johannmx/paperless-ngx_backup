@@ -2,8 +2,8 @@
 version: "2.1"
 services:
   backup:
-    image: johannmx/paperless-ngx_backup:nightly
-    container_name: paperless-ngx_backup_gotify
+    image: ghcr.io/johannmx/paperless-ngx_backup:main
+    container_name: paperless-ngx_backup
     volumes:
       - /docker/paperless/data:/data:ro # Read-only
       - /backups/paperless/:/backups
@@ -16,5 +16,8 @@ services:
       - GID=100
       - TZ=America/Argentina/Buenos_Aires # Specify a timezone to use EG Europe/London.
       - WATCHTOWER_LABEL_ENABLE=false
-      - GOTIFY_TOKEN=yourtoken
-      - GOTIFY_SERVER=server.domain.com
+      - GOTIFY_TOKEN=supertoken
+      - GOTIFY_SERVER=subdomain.domain.com
+      - SLACK_WEBHOOK=slakwebhook
+      - DISCORD_WEBHOOK_ID=discordwebhookid
+      - DISCORD_WEBHOOK_TOKEN discordwebhooktoken
