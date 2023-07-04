@@ -19,8 +19,9 @@ BACKUP_MEDIA="media" # directory
 start=$(date +%s)
 tar -Jcf $BACKUP_LOCATION $BACKUP_DB $BACKUP_DATA $BACKUP_MEDIA 2>/dev/null
 end=$(date +%s)
+DURATION="$end-$start"
 OUTPUT="${OUTPUT}New backup created"
-ELAPSETIME="Elapsed Time: $(($end-$start / 60)) minutes and $(($end-$start % 60)) seconds"
+ELAPSETIME="Elapsed Time: $(($DURATION / 60)) minutes"
 
 # ------------------ [ DELETE ] ------------------
 
