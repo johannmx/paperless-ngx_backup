@@ -17,11 +17,13 @@ BACKUP_MEDIA="media" # directory
 
 # Back up files and folders.
 start=$(date +%s)
+echo "[$(date +"%F %r")] Starting tar.xz compression..."
 tar -Jcf $BACKUP_LOCATION $BACKUP_DB $BACKUP_DATA $BACKUP_MEDIA 2>/dev/null
 end=$(date +%s)
+echo "[$(date +"%F %r")] Finishing tar.xz compression..."
 DURATION="$end-$start"
 OUTPUT="${OUTPUT}New backup created"
-ELAPSETIME="Elapsed Time: $(($DURATION / 60)) minutes"
+ELAPSETIME="Elapsed Time: $(($DURATION)) seconds"
 
 # ------------------ [ DELETE ] ------------------
 

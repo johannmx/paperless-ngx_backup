@@ -1,8 +1,8 @@
-## 💾 Paperless-ngx Backup + Gotify notifications (AppRise integration)
+## 💾 Paperless-ngx Backup + notifications (AppRise integration)
 
 Backs up Paperless-ngx files and directories to `tar.xz` archives automatically. `tar.xz` archives can be opened using data compression programs like [7-Zip](https://www.7-zip.org/) and [WinRAR](https://www.win-rar.com/).
 
-#####Docker image for all platforms, like ARM (Raspberry Pi) [Docker Hub](https://hub.docker.com/r/johannmx/paperless-ngx_backup)
+#####Docker image for all platforms, like ARM (Raspberry Pi) [GitHub](ghcr.io/johannmx/paperless-ngx_backup:main)
 
 Files and directories that are backed up:
 - /pgdata
@@ -23,8 +23,8 @@ Pass `manual` to `docker run` or `docker-compose` as a `command`.
 version: "2.1"
 services:
   backup:
-    image: johannmx/paperless-ngx_backup:nightly
-    container_name: paperless-ngx_backup_gotify
+    image: ghcr.io/johannmx/paperless-ngx_backup:main
+    container_name: paperless-ngx_backup
     volumes:
       - /docker/paperless/data:/data:ro # Read-only
       - /backups/paperless/:/backups
@@ -37,8 +37,11 @@ services:
       - GID=100
       - TZ=America/Argentina/Buenos_Aires # Specify a timezone to use EG Europe/London.
       - WATCHTOWER_LABEL_ENABLE=false
-      - GOTIFY_TOKEN=yourtoken
-      - GOTIFY_SERVER=server.domain.com
+      - GOTIFY_TOKEN=supertoken
+      - GOTIFY_SERVER=subdomain.domain.com
+      - SLACK_WEBHOOK=slakwebhook
+      - DISCORD_WEBHOOK_ID=discordwebhookid
+      - DISCORD_WEBHOOK_TOKEN=discordwebhooktoken
 ```
 
 ## Volumes _(permissions required)_
