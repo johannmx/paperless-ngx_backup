@@ -20,4 +20,4 @@ services:
       - GOTIFY_SERVER=subdomain.domain.com
       - SLACK_WEBHOOK=slakwebhook
       - DISCORD_WEBHOOK_ID=discordwebhookid
-      - DISCORD_WEBHOOK_TOKEN discordwebhooktoken
+      - DISCORD_WEBHOOK_TOKEN=discordwebhooktoken
