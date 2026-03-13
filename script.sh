@@ -1,62 +1,73 @@
 #!/bin/sh
 
-# --------------- [ PREREQUISITES ] ---------------
+# Set compression options
+case "$COMPRESSION" in
+    xz)  EXTENSION="tar.xz";  TAR_OPT="-Jcf" ;;
+    gz)  EXTENSION="tar.gz";  TAR_OPT="-zcf" ;;
+    zstd) EXTENSION="tar.zst"; TAR_OPT="--zstd -cf" ;;
+    *)    EXTENSION="tar.zst"; TAR_OPT="--zstd -cf"; COMPRESSION="zstd" ;;
+esac
 
-EXTENSION="tar.xz"
+echo "[$(date +"%F %T")] INFO: Using ${COMPRESSION} compression."
 
+# Define directories to backup
+BACKUP_DIRS="pgdata data media"
+BACKUP_FILE="$(date +"%F_%H-%M-%S").${EXTENSION}"
+BACKUP_LOCATION="/backups/${BACKUP_FILE}"
 
 # ------------------ [ BACKUP ] ------------------
 
-cd /data
+cd /data || { echo "ERROR: Could not change directory to /data"; exit 1; }
 
-BACKUP_LOCATION="/backups/$(date +"%F_%H-%M-%S").${EXTENSION}"
-
-BACKUP_DB="pgdata" # directory
-BACKUP_DATA="data" # directory
-BACKUP_MEDIA="media" # directory
-
-# Back up files and folders.
-echo "[$(date +"%F %r")] Starting tar.xz compression..."
+echo "[$(date +"%F %T")] INFO: Starting backup to ${BACKUP_FILE}..."
 start=$(date +%s)
-tar -Jcf $BACKUP_LOCATION $BACKUP_DB $BACKUP_DATA $BACKUP_MEDIA 2>/dev/null
-end=$(date +%s)
-echo "[$(date +"%F %r")] Finishing tar.xz compression..."
 
-OUTPUT="${OUTPUT}New backup created"
-ELAPSETIME="Elapsed Time: $(($end-$start)) seconds"
+# Capture tar output and errors
+TAR_OUTPUT=$(tar $TAR_OPT "$BACKUP_LOCATION" $BACKUP_DIRS 2>&1)
+TAR_EXIT_CODE=$?
+
+end=$(date +%s)
+ELAPSED=$((end-start))
+
+if [ $TAR_EXIT_CODE -eq 0 ]; then
+    echo "[$(date +"%F %T")] INFO: Backup finished successfully in ${ELAPSED} seconds."
+    OUTPUT="New backup created: ${BACKUP_FILE} (${ELAPSED}s)"
+    STATUS="SUCCESS"
+else
+    echo "[$(date +"%F %T")] ERROR: Backup failed with exit code ${TAR_EXIT_CODE}."
+    echo "$TAR_OUTPUT"
+    OUTPUT="Backup FAILED for ${BACKUP_FILE}. Error: ${TAR_OUTPUT}"
+    STATUS="FAILED"
+fi
 
 # ------------------ [ DELETE ] ------------------
 
-if [ -n "$DELETE_AFTER" ] && [ "$DELETE_AFTER" -gt 0 ]; then
-    cd /backups
-
-    # Find all archives older than x days, store them in a variable, delete them.
-    TO_DELETE=$(find . -iname "*.${EXTENSION}" -type f -mtime +$DELETE_AFTER)
-    find . -iname "*.${EXTENSION}" -type f -mtime +$DELETE_AFTER -exec rm -f {} \;
-
-    OUTPUT="${OUTPUT}, $([ ! -z "$TO_DELETE" ] \
-                       && echo "deleted $(echo "$TO_DELETE" | wc -l) archives older than ${DELETE_AFTER} days" \
-                       || echo "no archives older than ${DELETE_AFTER} days to delete")"
+if [ -n "$DELETE_AFTER" ] && [ "$DELETE_AFTER" -gt 0 ] && [ "$STATUS" = "SUCCESS" ]; then
+    echo "[$(date +"%F %T")] INFO: Checking for archives older than ${DELETE_AFTER} days..."
+    
+    # List files to delete
+    TO_DELETE=$(find /backups -maxdepth 1 -name "*.tar.*" -type f -mtime +$DELETE_AFTER)
+    DELETE_COUNT=$(echo "$TO_DELETE" | grep -c "tar")
+    
+    if [ "$DELETE_COUNT" -gt 0 ]; then
+        echo "$TO_DELETE" | xargs rm -f
+        echo "[$(date +"%F %T")] INFO: Deleted ${DELETE_COUNT} old archives."
+        OUTPUT="${OUTPUT}. Deleted ${DELETE_COUNT} old archives."
+    else
+        echo "[$(date +"%F %T")] INFO: No old archives to delete."
+    fi
 fi
 
+# ------------------ [ NOTIFICATIONS ] ------------------
 
-# ------------------ [ EXIT ] ------------------
+if [ -n "$APPRISE_URLS" ]; then
+    TITLE="Paperless-ngx Backup: ${STATUS}"
+    ICON=$([ "$STATUS" = "SUCCESS" ] && echo "☑️" || echo "❌")
+    
+    echo "[$(date +"%F %T")] INFO: Sending notifications via Apprise..."
+    apprise -t "${TITLE}" -b "${ICON} ${OUTPUT}" "${APPRISE_URLS}"
+else
+    echo "[$(date +"%F %T")] INFO: No APPRISE_URLS defined. Skipping notifications."
+fi
 
-echo "[$(date +"%F %r")] ${OUTPUT}."
-
-# ------------------ [ Gotify Notifications ] ------------------
-echo "[$(date +"%F %r")] Sending notification to Gotify Server."
-apprise -vv -t "Backup Paperless-ngx" -b "☑️ 💾 ${OUTPUT}" \
-   "gotifys://${GOTIFY_SERVER}/${GOTIFY_TOKEN}/?priority=high"
-
-# ------------------ [ Slack Notifications ] ------------------
-echo "[$(date +"%F %r")] Sending notification to Slack."
-apprise -vv -t "💾 Backup Vaultwarden" -b "☑️ ${OUTPUT}" \
-   "${SLACK_WEBHOOK}"
-
-# ------------------ [ Discord Notifications ] ------------------
-# Assuming our {WebhookID} is 4174216298
-# Assuming our {WebhookToken} is JHMHI8qBe7bk2ZwO5U711o3dV_js
-echo "[$(date +"%F %r")] Sending notification to Discord."
-apprise -vv -t "Info Status Backup - ${ELAPSETIME}" -b "💾 ${OUTPUT}" \
-   "discord://${DISCORD_WEBHOOK_ID}/${DISCORD_WEBHOOK_TOKEN}/?avatar=No"
+exit $TAR_EXIT_CODE
