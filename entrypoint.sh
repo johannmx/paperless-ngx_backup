@@ -1,36 +1,43 @@
 #!/bin/sh
 
+# Handle SIGTERM
+terminate() {
+    echo "[$(date +"%F %T")] INFO: SIGTERM received, shutting down..."
+    kill -TERM "$CROND_PID" 2>/dev/null
+    exit 0
+}
+
+trap terminate TERM INT
+
 SCRIPT_CMD="/sbin/su-exec ${UID}:${GID} /app/script.sh"
 LOGS_FILE="/app/log/log.log"
 
-# If passed "manual", run script once ($1 = First argument passed).
+# Ensure log file exists and is writable
+touch "$LOGS_FILE"
+chown "${UID}:${GID}" "$LOGS_FILE"
+
+# If passed "manual", run script once
 if [ "$1" = "manual" ]; then
-    echo "[$(date +"%F %r")] Running one-time."
-    $SCRIPT_CMD
-    exit 0
+    echo "[$(date +"%F %T")] INFO: Manual run triggered."
+    exec $SCRIPT_CMD
 fi
 
-# Create cron jobs if root.
-if [ "$(id -u)" -eq 0 ]; then
-    # Clear cron jobs.
-    echo "" | crontab -
-    echo "[$(date +"%F %r")] Cron jobs cleared."
+# Set up crontab for root (it runs the su-exec command)
+echo "[$(date +"%F %T")] INFO: Configuring cron jobs..."
+echo "$CRON_TIME $SCRIPT_CMD >> $LOGS_FILE 2>&1" | crontab -
 
-    # Add script to cron jobs.
-    (crontab -l 2>/dev/null; echo "$CRON_TIME $SCRIPT_CMD >> $LOGS_FILE 2>&1") | crontab -
-    echo "[$(date +"%F %r")] Added script to cron jobs."
-fi
+# Start crond in foreground (blocking)
+echo "[$(date +"%F %T")] INFO: Starting crond with schedule: ${CRON_TIME}"
+/usr/sbin/crond -f -L /app/log/cron.log &
+CROND_PID=$!
 
-# Start crond if it's not running.
-pgrep crond > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    /usr/sbin/crond -L /app/log/cron.log
-fi
+# Log startup message
+echo "[$(date +"%F %T")] INFO: Backup scheduler is active." >> "$LOGS_FILE"
 
-# Restart script as user "app:app".
-if [ "$(id -u)" -eq 0 ]; then
-    exec su-exec app:app "$0" "$@"
-fi
+# Follow logs and wait for crond
+tail -f "$LOGS_FILE" &
+TAIL_PID=$!
 
-echo "[$(date +"%F %r")] Running automatically (${CRON_TIME})." > "$LOGS_FILE"
-tail -F "$LOGS_FILE" # Keeps terminal open and writes logs.
+# Wait for crond to exit
+wait "$CROND_PID"
+kill "$TAIL_PID" 2>/dev/null
